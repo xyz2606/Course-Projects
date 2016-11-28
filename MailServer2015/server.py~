@@ -1,0 +1,146 @@
+global dataOn
+global allMails
+global mail
+global name
+global mailFrom
+global rcptTo
+global username
+global password
+global sock
+global connection
+def parse(cmd) :
+	global dataOn
+	global allMails
+	global mail
+	global name
+	global mailFrom
+	global rcptTo	
+	global username
+	global password
+	global sock
+	global connection
+	print "cmd = ", cmd
+	if dataOn == True :
+		if cmd == "." :
+			dataOn = False
+			print "rcpt = ", rcptTo
+			if not allMails.has_key(rcptTo) :
+				allMails[rcptTo] = []
+			allMails[rcptTo] += [[name, mailFrom, mail]]
+		else :
+			mail = mail + [cmd]
+	elif cmd[0:4].upper() == "HELO" :
+		print "HELO"
+		name = cmd[5:]
+	elif cmd[0:9].upper() == "MAIL FROM" :
+		print "MAIL FROM"
+		mailFrom = cmd[12:-1]
+	elif cmd[0:7].upper() == "RCPT TO" :
+		print "RCPT TO"
+		rcptTo = cmd[10:-1]
+	elif cmd[0:4].upper() == "DATA" :
+		print "DATA"
+		dataOn = True
+		mail = []
+	elif cmd[0:3].upper() == "ALL" :
+		print allMails
+	elif cmd[0:4].upper() == "EXIT" :
+		f = open('data.txt', 'w')
+		f.write(str(allMails))
+		f.close()
+		exit()
+	elif cmd[0:4].upper() == "USER" : 
+		username = cmd[5:]
+	elif cmd[0:4].upper() == "PASS" :
+		password = cmd[5:]
+	elif cmd[0:4].upper() == "LIST" :
+		if password == username + "123456" :
+			if allMails.has_key(username) :
+				res = len(allMails[username])
+			else :
+				res = 0
+			connection.send("total " + str(res) + " mails, numbered from 1.\n")
+		else :
+			connection.send("Mismatch.\n")
+	elif cmd[0:4].upper() == "RETR" :
+		if password == username + "123456" :
+			if allMails.has_key(username) :
+				res = len(allMails[username])
+			else :
+				res = 0
+			if len(cmd) < 6 or cmd[5] < '0' or cmd[5] > '9' :
+				connection.send('Invalid mail index\n.\n')
+				return
+			x = int(cmd[5:]) - 1
+			print res
+			if x >= res or x < 0 : 
+				connection.send("Invalid mail index\n.\n")
+			else :
+				curMail = allMails[username][x][2]
+				for i in curMail:
+					connection.send(i + '\n')
+				connection.send("\n.\n")
+		else :
+			connection.send("Mismatch\n.\n")
+	elif cmd[0:4].upper() == "DELE" :
+		if password == username + "123456" :
+			if allMails.has_key(username) :
+				res = len(allMails[username])
+			else :
+				res = 0
+			if cmd[5] < '0' or cmd[5] > '9' :
+				return
+			x = int(cmd[5:]) - 1
+			print res
+			if x >= res or x < 0 : 
+				connection.send("Invalid mail index.\n")
+			else :
+				allMails[username] = allMails[username][0:x] + allMails[username][x + 1:]
+				connection.send("ok. total " + str(x) + " mails.\n")
+		else :
+			connection.send("Mismatch.\n")
+global dataOn
+global allMails
+global name
+global mailFrom
+global rcptTo
+global sock
+global username
+global password
+global connection
+username = ""
+password = ""
+name = ""
+mailFrom = ""
+rcptTo = ""
+allMails = {}
+import socket
+print "Mail Server Started"
+f = open('data.txt', 'r')
+allMails = eval(f.read())
+print allMails
+f.close()
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.bind(('localhost', 7073))
+sock.listen(5)
+cmd = ""
+print "Listing socket 7073"
+while True :
+	connection, address = sock.accept()
+	connection.send('\n')
+	print connection
+	print address
+	dataOn = False
+	while True :
+		buf = connection.recv(1)
+		
+		print buf, buf == '\n', buf == '\r'
+		if buf == '\n' or buf == '\r' :
+			
+			if cmd != "\n" and cmd != "\r" :
+				parse(cmd)
+				cmd = ""
+		else :
+			cmd = cmd + buf
+			#connection.send(buf)
+			#connection.send('-')

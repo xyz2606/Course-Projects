@@ -1,0 +1,395 @@
+/** @file */
+#ifndef __LINKEDLIST_H
+#define __LINKEDLIST_H
+
+#include "IndexOutOfBound.h"
+#include "ElementNotExist.h"
+#include<iostream>
+#include<cstdio>
+
+using namespace std;
+/**
+ * A linked list.
+ *
+ * The iterator iterates in the order of the elements being loaded into this list.
+ */
+template <class T>
+class LinkedList
+{
+private:
+    struct Entry
+    {
+	    T v;
+	    Entry * prev, * next;
+	    Entry(const T & a) : v(a){prev = next = 0;}
+    };
+public:
+    class Iterator
+    {
+        Entry * v;
+	LinkedList<T> * LL;
+	bool DEL;
+    public:
+        /**
+         * TODO Returns true if the iteration has more elements.
+         */
+	Iterator(Entry * v, LinkedList<T> * LL) : v(v), LL(LL), DEL(false){}
+	bool hasNext() 
+	{
+		return v;
+	}
+
+        /**
+         * TODO Returns the next element in the iteration.
+         * @throw ElementNotExist exception when hasNext() == false
+         */
+        const T &next()
+	{
+		if(!v) throw ElementNotExist();
+		else
+		{
+			const T & rtn = v->v;
+			DEL = true;
+			v = v->next;
+			return rtn;
+		}
+	}
+
+        /**
+         * TODO Removes from the underlying collection the last element
+         * returned by the iterator
+         * The behavior of an iterator is unspecified if the underlying
+         * collection is modified while the iteration is in progress in
+         * any way other than by calling this method.
+         * @throw ElementNotExist
+         */
+        void remove()
+	{
+		if(!DEL) throw ElementNotExist();
+		else
+		{
+			DEL = false;
+			LL->siz--;
+			if(v)
+			{
+				if(v->prev->prev)
+					v->prev->prev->next = v;
+				else
+					LL->root = v;
+				Entry * p = v->prev;
+				v->prev = v->prev->prev;
+				delete p;
+			}else
+			{
+				if(LL->size() == 0)
+				{
+					delete LL->leaf;
+					LL->root = LL->leaf = 0;
+				}else
+				{
+					LL->leaf = LL->leaf->prev;
+					delete LL->leaf->next;
+					LL->leaf->next = 0;
+				}
+			}
+		}
+	}
+    };
+
+    /**
+     * TODO Constructs an empty linked list
+     */
+    Entry * root, * leaf;
+    int siz;
+    LinkedList()
+    {
+	    root = leaf = 0;
+	    siz = 0;
+    }
+
+    /**
+     * TODO Copy constructor
+     */
+    void deallocate()
+    {
+    	    if(!root) return;
+	    for(;;)
+	    {
+		    leaf = leaf->prev;
+		    if(leaf)
+			    delete leaf->next;
+		    else
+			    break;
+	    }
+	    delete root;
+    }
+    LinkedList(const LinkedList<T> &c)
+    {
+	    root = leaf = 0;
+	    siz = 0;
+	    for(Entry * p = c.root; p; p = p->next)
+	    {
+		    add(p->v);
+	    }
+    }
+
+    /**
+     * TODO Assignment operator
+     */
+    LinkedList<T>& operator=(const LinkedList<T> &c)
+    {
+	    deallocate();
+	    new (this) LinkedList(c);
+    }
+
+    /**
+     * TODO Returns true if this list contains no elements.
+     */
+    bool isEmpty() const
+    {
+	    return root == 0;
+    }
+    /**
+     * TODO Desturctor
+     */
+    ~LinkedList()
+    {
+	    deallocate();
+    }
+
+    
+    /**
+     * TODO Inserts the specified element to the beginning of this list.
+     */
+    void addFirst(const T& elem)
+    {
+	    siz++;
+	    if(!root)
+		    root = leaf = new Entry(elem);
+	    else
+	    {
+		    root->prev = new Entry(elem);
+		    root->prev->next = root;
+		    root = root->prev;
+	    }
+    }
+
+    /**
+     * TODO Insert the specified element to the end of this list.
+     * Equivalent to add.
+     */
+    void addLast(const T &elem)
+    {
+	    siz++;
+	    if(!root)
+		    root = leaf = new Entry(elem);
+	    else
+	    {
+		    leaf->next = new Entry(elem);
+		    leaf->next->prev = leaf;
+		    leaf = leaf->next;
+	    }
+    }
+    /**
+     * TODO Appends the specified element to the end of this list.
+     * Always returns true.
+     */
+    bool add(const T& e)
+    {
+	addLast(e);
+    }
+    
+    /**
+     * TODO Inserts the specified element to the specified position in this list.
+     * The range of index parameter is [0, size], where index=0 means inserting to the head,
+     * and index=size means appending to the end.
+     * @throw IndexOutOfBound
+     */
+    void add(int index, const T& element)
+    {
+	    if(index < 0 or index > siz)
+		    throw IndexOutOfBound();
+	    else
+	    {
+		    Entry * p = root;
+		    for(int i = 0; i < index; i++) p = p->next;
+		    if(!p)
+			    addLast(element);
+		    else if(p->prev)
+		    {
+			    p->prev->next = new Entry(element);
+			    p->prev->next->prev = p->prev;
+			    p->prev = p->prev->next;
+			    p->prev->next = p;
+			    siz++;
+		    }else
+			    addFirst(element);
+	    }
+    }
+    bool selfCheck()
+    {
+	    int siz1 = 0;
+	    for(Entry * p = root; p; p = p->next)
+	    {
+		    siz1 ++;
+		    if(p->next and p->next->prev != p or p->prev and p->prev->next != p) return false;
+	    }
+	    //printf("SELFCHECK real size = %d; size() = %d\n", siz1, siz);
+	    return siz1 == siz;
+    }
+    /**
+     * TODO Removes all of the elements from this list.
+     */
+    void clear()
+    {
+	    deallocate();
+	    root = leaf = 0;
+	    siz = 0;
+    }
+
+    /**
+     * TODO Returns true if this list contains the specified element.
+     */
+    bool contains(const T& e) const
+    {
+	    for(Entry * p = root; p; p = p->next)
+		    if(p->v == e) return true;
+	    return false;
+    }
+
+    /**
+     * TODO Returns a const reference to the element at the specified position in this list.
+     * The index is zero-based, with range [0, size).
+     * @throw IndexOutOfBound
+     */
+    const T& get(int index) const
+    {
+	    if(index < 0 or index >= siz) throw IndexOutOfBound();
+	    else
+	    {
+		    Entry * p = root;
+		    for(int i = 0; i < index; i++) p = p->next;
+		    return p->v;
+	    }
+    }
+
+    /**
+     * TODO Returns a const reference to the first element.
+     * @throw ElementNotExist
+     */
+    const T& getFirst() const
+    {
+	    if(!root) throw ElementNotExist();
+	    else return root->v;
+    }
+
+    /**
+     * TODO Returns a const reference to the last element.
+     * @throw ElementNotExist
+     */
+    const T& getLast() const
+    {
+	    if(!leaf) throw ElementNotExist();
+	    else return leaf->v;
+    }
+
+
+    /**
+     * TODO Returns an iterator over the elements in this list.
+     */
+    Iterator iterator()
+    {
+	    return Iterator(root, this);
+    }
+    /**
+     * TODO Removes the element at the specified position in this list.
+     * The index is zero-based, with range [0, size).
+     * @throw IndexOutOfBound
+     */
+    void removeIndex(int index)
+    {
+	    if(index < 0 or index >= siz)
+		    throw IndexOutOfBound();
+	    else
+	    {
+		    Iterator itr(root, this);
+		    for(int i = 0; i <= index; i++) itr.next();
+		    itr.remove();
+	    }
+    }
+
+    /**
+     * TODO Removes the first occurrence of the specified element from this list, if it is present.
+     * Returns true if it was present in the list, otherwise false.
+     */
+    bool remove(const T &e)
+    {
+	    for(Iterator itr = iterator(); itr.hasNext(); )
+		    if(itr->next() == e)
+		    {
+			    itr.remove();
+			    return true;
+		    }
+	    return false;
+    }
+
+    /**
+     * TODO Removes the first element from this list.
+     * @throw ElementNotExist
+     */
+    void removeFirst()
+    {
+	    if(!siz)
+		    throw ElementNotExist();
+	    else
+	    {
+		    Iterator itr = iterator();
+		    itr.next();
+		    itr.remove();
+	    }
+    }
+
+    /**
+     * TODO Removes the last element from this list.
+     * @throw ElementNotExist
+     */
+    void removeLast()
+    {
+	    if(!siz)
+		    throw ElementNotExist();
+	    else
+	    {
+		    Iterator itr(leaf, this);
+		    itr.next();
+		    itr.remove();
+	    }
+    }
+
+    /**
+     * TODO Replaces the element at the specified position in this list with the specified element.
+     * The index is zero-based, with range [0, size).
+     * @throw IndexOutOfBound
+     */
+    void set(int index, const T &element)
+    {
+	    if(index < 0 or index >= siz)
+		    throw IndexOutOfBound();
+	    else
+	    {
+		    Entry * p = root;
+		    for(int i = 0; i < index; i++) p = p->next;
+		    new (&p->v) T(element);
+	    }
+    }
+
+    /**
+     * TODO Returns the number of elements in this list.
+     */
+    int size() const
+    {
+	    return siz;
+    }
+
+};
+
+#endif

@@ -1,0 +1,101 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+
+class InFrame extends Frame
+{
+	InFrame()
+	{
+		TextArea source = new TextArea();
+		source.setSize(200, 200);
+		TextArea result = new TextArea();
+		result.setEditable(false);
+		result.setSize(200, 200);
+		Button save = new Button("Save & Compile");
+		Button run = new Button("Run!!!");
+		save.addActionListener(new GUI(source, result));
+		run.addActionListener(new CMD(result));
+		setLayout(new FlowLayout());
+		add(source);
+		add(save);
+		add(run);
+		add(result);
+		pack();
+		setVisible(true);
+	}
+}
+
+class GUI implements ActionListener
+{
+	TextArea source, result;
+	public GUI(TextArea source, TextArea result)
+	{
+		this.source = source;
+		this.result = result;
+	}
+	
+	public void actionPerformed(ActionEvent e)
+	{
+		try
+		{
+			result.setText("Saving...");
+			File file = new File("source.java");
+			if (!file.exists())
+				file.createNewFile();
+			FileOutputStream out = new FileOutputStream("source.java");
+			PrintStream p = new PrintStream(out);
+			p.println(source.getText());
+			out.close();
+			result.setText("Compling...");
+			
+		}
+		catch(Exception ee)
+		{
+			System.out.println("ErrorCompile");
+		}
+	}
+}
+
+class CMD implements ActionListener
+{
+	TextArea result;
+	public CMD(TextArea result)
+	{
+		this.result = result;
+	}
+	
+	public void actionPerformed(ActionEvent e)
+	{
+		try
+		{
+			result.setText("Testing...");
+			//String cmd = "javac /home/zjr506/work/source.java";
+			String cmd = "./make.sh";
+			Process pro = Runtime.getRuntime().exec(cmd);
+			LineNumberReader line = new LineNumberReader(new InputStreamReader(pro.getInputStream()));  
+			String lineStr, res = new String("");
+			while ((lineStr = line.readLine()) != null)
+	 		{
+	   			res = res + lineStr;
+	  			res = res + "\n";
+	 		}
+	 		result.setText(res);
+			if (pro.waitFor() != 0)
+			{
+				if (pro.exitValue() == 1)
+				result.setText("Error!!!");
+			}
+		}
+		catch(Exception ee)
+		{
+			System.out.println("ErrorRun");
+		}
+	}
+}
+public class Test
+{
+	public static void main(String args[])
+	{
+		InFrame f = new InFrame();
+	}
+}

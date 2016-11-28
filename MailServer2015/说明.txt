@@ -1,0 +1,30 @@
+关于电子邮件服务器和客户端
+(1)使用的协议
+发送电子邮件使用的是smtp协议, 查看电子邮件使用的则是pop3协议.
+实现的命令有:
+smtp:
+HELO name
+	说明自身的身份
+MAIL FROM: <aaa@bbb.ccc>
+	说明发件人邮箱
+RCPT TO: <ccc@bbb.aaa>
+	说明收件人邮箱
+DATA
+	邮件正文
+发邮件不需要身份认证.
+pop3:
+USER name
+	说明要查看的邮箱, 须与收件人邮箱完全一致方可看到里面的邮件.
+PASS password
+	密码. 须与name相匹配.
+LIST
+	当password和name相匹配时, 返回邮箱里邮件的个数.
+RETR x
+	当password和name相匹配时, 返回邮箱里第x封邮件, 从1开始编号.
+DELE x
+	当password和name相匹配时, 删除邮箱里第x封邮件, 从1开始编号.
+(2)客户端的用法
+启动客户端后(需要先启动服务器), 会自动与服务器连接. 填好from, to和name(对应MAIL FROM, RCPT TO和HELO)以及邮件正文后, 点发送即可. 退出时须按EXIT.
+同时如果在右边填入与from内的邮箱相匹配的密码, 就能用右边的按钮查看或删除邮件. 现在密码默认为"邮箱+123456".
+(3)实现
+用python的socket库实现端口的交流. 服务器默认在本地(127.0.0.1)的7073端口.
