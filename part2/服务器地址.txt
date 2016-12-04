@@ -1,0 +1,12 @@
+µÿ÷∑ªπ « 
+
+ssh acmdbu07@georgia.eng.utah.edu 
+http://georgia.eng.utah.edu:8080/~acmdbu07/main.jsp
+
+javac acmdb/*.java
+
+source create_table.sql;
+
+acmdbu07	4ttuqe73
+
+mysql -u acmdbu07 -h georgia.eng.utah.edu acmdb07 -p
