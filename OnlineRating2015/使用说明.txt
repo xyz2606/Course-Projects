@@ -1,0 +1,14 @@
+本网站实现了project要求的所有功能。
+为了简洁起见，均实现在一个页面内。
+
+部分功能需要输入用户的 username， POI的pid, 或者 feedback的 fid, 以及statistic的时候需要给定 category. 
+
+这些 pid, username, fid, category等信息，均可在页面上部找到查看的按钮：
+
+show some fun users!
+
+show some fun feedbacks!
+
+show some fun categories!
+
+以及下方的 poi查询功能就能满足所有的需求。
